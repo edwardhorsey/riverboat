@@ -38,7 +38,7 @@ type GameView struct {
 	Stage          GameStage
 	Betting        bool
 	Config         GameConfig
-	Players        []player
+	Players        []Player
 	Deck           Deck
 	Pots           []Pot
 	MinRaise       uint
@@ -64,7 +64,7 @@ func (g *Game) copyToView() *GameView {
 		Stage:          g.getStage(),
 		Betting:        g.getBetting(),
 		Config:         g.config,
-		Players:        append([]player{}, g.players...),
+		Players:        append([]Player{}, g.players...),
 		Deck:           append([]Card{}, g.deck...),
 		Pots:           copyPots(g.pots),
 		MinRaise:       g.minRaise,
@@ -101,7 +101,7 @@ func (g *Game) FillFromView(gv *GameView) {
 	g.communityCards = append([]Card{}, gv.CommunityCards...)
 	g.setStageAndBetting(gv.Stage, gv.Betting)
 	g.config = gv.Config
-	g.players = append([]player{}, gv.Players...)
+	g.players = append([]Player{}, gv.Players...)
 	g.deck = append([]Card{}, gv.Deck...)
 	g.pots = copyPots(gv.Pots)
 	g.minRaise = gv.MinRaise
