@@ -287,7 +287,7 @@ func fold(g *Game, pn uint, data uint) error {
 func Leave(g *Game, pn uint, data uint) error {
 	g.mtx.Lock()
 	defer g.mtx.Unlock()
-	return toggleReady(g, pn, data)
+	return leave(g, pn, data)
 }
 
 func leave(g *Game, pn uint, data uint) error {
@@ -318,8 +318,9 @@ func ToggleReady(g *Game, pn uint, data uint) error {
 
 func toggleReady(g *Game, pn uint, data uint) error {
 	p := g.getPlayer(pn)
+	stage := g.getStage()
 
-	if p.In {
+	if stage != PreDeal && p.In {
 		return ErrIllegalAction
 	}
 
@@ -335,8 +336,12 @@ func toggleReady(g *Game, pn uint, data uint) error {
 	}
 
 	if pn == g.dealerNum {
-		for !(g.players[g.dealerNum].Ready) {
-			g.dealerNum = g.dealerNum + 1
+		startDealer := g.dealerNum
+		for !g.players[g.dealerNum].Ready {
+			g.dealerNum = (g.dealerNum + 1) % uint(len(g.players))
+			if g.dealerNum == startDealer {
+				break
+			}
 		}
 	}
 
