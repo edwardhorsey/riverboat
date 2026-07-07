@@ -139,7 +139,7 @@ func (g *Game) getPlayer(pn uint) *player {
 func (g *Game) readyCount() uint {
 	var readyCount uint = 0
 	for _, p := range g.players {
-		if p.Ready {
+		if p.Ready && !p.Left {
 			readyCount++
 		}
 	}
@@ -150,7 +150,7 @@ func (g *Game) isCalled(pn uint) bool {
 	return g.players[pn].allIn() || (g.players[pn].Called)
 }
 
-//Returns nil if there are more than 2 players ready, ErrIllegalAction otherwise
+// Returns nil if there are more than 2 players ready, ErrIllegalAction otherwise
 func (g *Game) updateBlindNums() {
 	readyCount := g.readyCount()
 
@@ -163,22 +163,22 @@ func (g *Game) updateBlindNums() {
 		g.sbNum = g.dealerNum
 		g.utgNum = g.dealerNum
 		g.bbNum = (g.dealerNum + 1) % uint(len(g.players))
-		for !g.players[g.bbNum].Ready {
+		for !g.players[g.bbNum].Ready || g.players[g.bbNum].Left {
 			g.bbNum = (g.bbNum + 1) % uint(len(g.players))
 		}
 	} else {
 		g.sbNum = (g.dealerNum + 1) % uint(len(g.players))
-		for !g.players[g.sbNum].Ready {
+		for !g.players[g.sbNum].Ready || g.players[g.sbNum].Left {
 			g.sbNum = (g.sbNum + 1) % uint(len(g.players))
 		}
 
 		g.bbNum = (g.sbNum + 1) % uint(len(g.players))
-		for !g.players[g.bbNum].Ready {
+		for !g.players[g.bbNum].Ready || g.players[g.bbNum].Left {
 			g.bbNum = (g.bbNum + 1) % uint(len(g.players))
 		}
 
 		g.utgNum = (g.bbNum + 1) % uint(len(g.players))
-		for !g.players[g.utgNum].Ready {
+		for !g.players[g.utgNum].Ready || g.players[g.utgNum].Left {
 			g.utgNum = (g.utgNum + 1) % uint(len(g.players))
 		}
 	}
@@ -216,10 +216,16 @@ func (g *Game) resetForNextHand() {
 			g.players[i].Ready = false
 		}
 
+		if !g.players[i].Ready || g.players[i].Left {
+			g.players[i].In = false
+			g.players[i].Cards[0] = 0
+			g.players[i].Cards[1] = 0
+		}
+
 	}
 
 	g.dealerNum = (g.dealerNum + 1) % uint(len(g.players))
-	for !g.players[g.dealerNum].Ready {
+	for !g.players[g.dealerNum].Ready || g.players[g.dealerNum].Left {
 		g.dealerNum = (g.dealerNum + 1) % uint(len(g.players))
 	}
 
@@ -380,14 +386,15 @@ func (g *Game) updateRoundInfo() {
 
 // NewGame is a factory method that returns a pointer to an initialized game.
 // This freshly created game will have the following default values:
-// 	Players: []
-// 	GameStage: PreDeal
-// 	Betting: False
-// 	Config: {
-// 		BigBlind:	25
-// 		SmallBlind:	10
-// 		MaxBuy:		0
-// 	}
+//
+//	Players: []
+//	GameStage: PreDeal
+//	Betting: False
+//	Config: {
+//		BigBlind:	25
+//		SmallBlind:	10
+//		MaxBuy:		0
+//	}
 func NewGame() *Game {
 	newGame := Game{}
 
@@ -404,6 +411,12 @@ func NewGame() *Game {
 }
 
 func (g *Game) AddPlayer() uint {
+	for i := range g.players {
+		if g.players[i].Left {
+			g.players[i].initialize()
+			return uint(i)
+		}
+	}
 	g.players = append(g.players, player{})
 	g.players[len(g.players)-1].initialize()
 	return uint(len(g.players) - 1)

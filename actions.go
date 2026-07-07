@@ -200,7 +200,7 @@ func deal(g *Game, pn uint, data uint) error {
 		}
 
 		for i, p := range g.players {
-			if p.Ready {
+			if p.Ready && !p.Left {
 				g.players[i].Cards[0] = g.deck.Pop()
 				g.players[i].Cards[1] = g.deck.Pop()
 				g.players[i].In = true
@@ -338,7 +338,7 @@ func toggleReady(g *Game, pn uint, data uint) error {
 
 	if pn == g.dealerNum {
 		startDealer := g.dealerNum
-		for !g.players[g.dealerNum].Ready {
+		for !g.players[g.dealerNum].Ready || g.players[g.dealerNum].Left {
 			g.dealerNum = (g.dealerNum + 1) % uint(len(g.players))
 			if g.dealerNum == startDealer {
 				break
