@@ -1119,4 +1119,147 @@ func TestIntegration_Scenarios(t *testing.T) {
 		}
 	})
 
+	t.Run("Scenario 17 fold concedes winner", func(t *testing.T) {
+		g := NewGame()
+
+		pnA := g.AddPlayer()
+		pnB := g.AddPlayer()
+
+		err := BuyIn(g, pnA, 100)
+		if err != nil {
+			t.Fatalf("BuyIn pnA: %v", err)
+		}
+		err = BuyIn(g, pnB, 100)
+		if err != nil {
+			t.Fatalf("BuyIn pnB: %v", err)
+		}
+
+		err = ToggleReady(g, pnA, 0)
+		if err != nil {
+			t.Fatalf("ToggleReady pnA: %v", err)
+		}
+		err = ToggleReady(g, pnB, 0)
+		if err != nil {
+			t.Fatalf("ToggleReady pnB: %v", err)
+		}
+
+		stackA := g.players[pnA].Stack
+		stackB := g.players[pnB].Stack
+
+		err = Deal(g, pnA, 0)
+		if err != nil {
+			t.Fatalf("Deal: %v", err)
+		}
+
+		actionNum := g.GenerateOmniView().ActionNum
+		err = Fold(g, actionNum, 0)
+		if err != nil {
+			t.Fatalf("Fold: %v", err)
+		}
+
+		view := g.GenerateOmniView()
+
+		if view.Stage != PreDeal {
+			t.Errorf("expected PreDeal after fold concession, got %d", view.Stage)
+		}
+
+		if len(view.Pots) == 0 {
+			t.Fatal("expected pots to have winner info after fold concession")
+		}
+
+		winner := (actionNum + 1) % 2
+		if len(view.Pots[0].WinningPlayerNums) != 1 {
+			t.Fatalf("expected 1 winner in pot, got %d", len(view.Pots[0].WinningPlayerNums))
+		}
+		if view.Pots[0].WinningPlayerNums[0] != winner {
+			t.Errorf("expected winner to be player %d, got %d", winner, view.Pots[0].WinningPlayerNums[0])
+		}
+
+		if view.Pots[0].Amt == 0 {
+			t.Error("expected pot to have money")
+		}
+
+		if winner == 0 {
+			if g.players[pnA].Stack <= stackA {
+				t.Errorf("expected winner (pnA) stack to increase, was %d, now %d", stackA, g.players[pnA].Stack)
+			}
+		} else {
+			if g.players[pnB].Stack <= stackB {
+				t.Errorf("expected winner (pnB) stack to increase, was %d, now %d", stackB, g.players[pnB].Stack)
+			}
+		}
+	})
+
+	t.Run("Scenario 18 fold concedes winner with side pots", func(t *testing.T) {
+		g := NewGame()
+
+		pnA := g.AddPlayer()
+		pnB := g.AddPlayer()
+		pnC := g.AddPlayer()
+
+		err := BuyIn(g, pnA, 1000)
+		if err != nil {
+			t.Fatalf("BuyIn pnA: %v", err)
+		}
+		err = BuyIn(g, pnB, 1000)
+		if err != nil {
+			t.Fatalf("BuyIn pnB: %v", err)
+		}
+		err = BuyIn(g, pnC, 1000)
+		if err != nil {
+			t.Fatalf("BuyIn pnC: %v", err)
+		}
+
+		err = ToggleReady(g, pnA, 0)
+		if err != nil {
+			t.Fatalf("ToggleReady pnA: %v", err)
+		}
+		err = ToggleReady(g, pnB, 0)
+		if err != nil {
+			t.Fatalf("ToggleReady pnB: %v", err)
+		}
+		err = ToggleReady(g, pnC, 0)
+		if err != nil {
+			t.Fatalf("ToggleReady pnC: %v", err)
+		}
+
+		err = Deal(g, pnA, 0)
+		if err != nil {
+			t.Fatalf("Deal: %v", err)
+		}
+
+		actionNum := g.GenerateOmniView().ActionNum
+
+		err = Fold(g, actionNum, 0)
+		if err != nil {
+			t.Fatalf("Fold pnA: %v", err)
+		}
+
+		view := g.GenerateOmniView()
+		actionNum = view.ActionNum
+		err = Fold(g, actionNum, 0)
+		if err != nil {
+			t.Fatalf("Fold pnB: %v", err)
+		}
+
+		view = g.GenerateOmniView()
+
+		if view.Stage != PreDeal {
+			t.Errorf("expected PreDeal after fold concession, got %d", view.Stage)
+		}
+
+		if len(view.Pots) == 0 {
+			t.Fatal("expected pots to have winner info after fold concession")
+		}
+
+		for i, pot := range view.Pots {
+			if len(pot.WinningPlayerNums) != 1 {
+				t.Fatalf("pot %d: expected 1 winner, got %d", i, len(pot.WinningPlayerNums))
+			}
+			if pot.WinningPlayerNums[0] != pnC {
+				t.Errorf("pot %d: expected winner to be pnC (%d), got %d", i, pnC, pot.WinningPlayerNums[0])
+			}
+		}
+	})
+
 }

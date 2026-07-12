@@ -293,8 +293,9 @@ func (g *Game) updateRoundInfo() {
 	// If less than two players are still in, the hand has been conceded
 	if len(inPlayerNums) < 2 {
 		//the sole number in the array is the winner by default
-		//TODO: Create a pot here to simplify sending result description
-		// But this is special because cards do not need to be shown
+		for i := range g.pots {
+			g.pots[i].WinningPlayerNums = []uint{inPlayerNums[0]}
+		}
 		for _, p := range g.players {
 			g.players[inPlayerNums[0]].Stack += p.TotalBet
 		}
