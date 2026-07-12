@@ -1262,4 +1262,55 @@ func TestIntegration_Scenarios(t *testing.T) {
 		}
 	})
 
+	t.Run("Scenario 19 preserve cards through showdown", func(t *testing.T) {
+		g := NewGame()
+
+		pnA := g.AddPlayer()
+		pnB := g.AddPlayer()
+
+		for _, playerNum := range []uint{pnA, pnB} {
+			if err := BuyIn(g, playerNum, 100); err != nil {
+				t.Fatalf("BuyIn player %d: %v", playerNum, err)
+			}
+			if err := ToggleReady(g, playerNum, 0); err != nil {
+				t.Fatalf("ToggleReady player %d: %v", playerNum, err)
+			}
+		}
+
+		if err := Deal(g, pnA, 0); err != nil {
+			t.Fatalf("Deal: %v", err)
+		}
+
+		dealtCardsA := g.players[pnA].Cards
+		dealtCardsB := g.players[pnB].Cards
+
+		for g.getStage() != PreDeal {
+			actionNum := g.actionNum
+			callAmount := g.toCall() - g.players[actionNum].Bet
+			if err := Bet(g, actionNum, callAmount); err != nil {
+				t.Fatalf("Bet player %d: %v", actionNum, err)
+			}
+		}
+
+		view := g.GenerateOmniView()
+		if view.Players[pnA].Cards != dealtCardsA {
+			t.Errorf("expected player %d cards to remain after showdown", pnA)
+		}
+		if view.Players[pnB].Cards != dealtCardsB {
+			t.Errorf("expected player %d cards to remain after showdown", pnB)
+		}
+
+		if err := Deal(g, g.dealerNum, 0); err != nil {
+			t.Fatalf("Deal next hand: %v", err)
+		}
+
+		view = g.GenerateOmniView()
+		if view.Players[pnA].Cards == dealtCardsA {
+			t.Errorf("expected player %d cards to be replaced on next deal", pnA)
+		}
+		if view.Players[pnB].Cards == dealtCardsB {
+			t.Errorf("expected player %d cards to be replaced on next deal", pnB)
+		}
+	})
+
 }

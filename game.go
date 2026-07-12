@@ -212,8 +212,6 @@ func (g *Game) resetForNextHand() {
 		g.players[i].Bet = 0
 		g.players[i].TotalBet = 0
 		g.players[i].In = false
-		g.players[i].Cards[0] = 0
-		g.players[i].Cards[1] = 0
 
 		if g.players[i].Stack == 0 {
 			g.players[i].Ready = false
